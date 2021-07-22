@@ -299,6 +299,8 @@ class Worker(BaseWorker):
     def _collect(self, metric, start_timestamp):
         next_timestamp = tzutils.add_delta(
             start_timestamp, timedelta(seconds=self._period))
+        LOG.info("[Nectar] Collecting project %s metric/%s from %s to %s",
+                 self._tenant_id, metric, start_timestamp, next_timestamp)
 
         name, data = self._collector.retrieve(
             metric,
@@ -627,11 +629,12 @@ class CloudKittyProcessor(cotyledon.Service):
         for tenant_id in self.tenants:
             lock_name, lock = get_lock(
                 self.coord, self.generate_lock_base_name(tenant_id))
-
             LOG.debug('[Worker: {w}] Trying to acquire lock "{lock_name}" for '
                       'scope ID {scope_id}.'.format(w=self._worker_id,
                                                     lock_name=lock_name,
                                                     scope_id=tenant_id))
+            LOG.info('[Nectar] Processing tenant {tenant}'.format(
+                tenant=tenant_id))
 
             lock_acquired = lock.acquire(blocking=False)
             if lock_acquired:
