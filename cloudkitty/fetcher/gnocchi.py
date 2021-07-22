@@ -69,6 +69,11 @@ gfetcher_opts = [
         default=requests.adapters.DEFAULT_POOLSIZE,
         help='If the value is not defined, we use the value defined by '
              'requests.adapters.DEFAULT_POOLSIZE',
+    ),
+    cfg.StrOpt(
+        'since',
+        default='2021-01-01',
+        help='Only get the data since the specified date',
     )
 ]
 
@@ -123,13 +128,23 @@ class GnocchiFetcher(fetcher.BaseFetcher):
     def get_tenants(self):
         resources = []
         resource_types = CONF.fetcher_gnocchi.resource_types
+        since = CONF.fetcher_gnocchi.since
+        query = {"or": [{"=": {"ended_at": None}},
+                        {">=": {"ended_at": since}}]}
         for resource_type in resource_types:
             marker = None
+            count = 0
             while True:
-                resources_chunk = self._conn.resource.list(
+                resources_chunk = self._conn.resource.search(
                     resource_type=resource_type,
                     marker=marker,
+                    query=query,
+                    sorts='project_id:asc',
                     details=True)
+                count += 1
+                LOG.info("[Nectar] Getting resources with type %s: "
+                         "#%d call with %s resources and marker is %s",
+                         resource_type, count, len(resources_chunk), marker)
                 if len(resources_chunk) < 1 or (
                         len(resources) == 1 and resources[0]['id'] == marker):
                     break
