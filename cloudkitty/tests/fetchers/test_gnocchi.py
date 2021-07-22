@@ -13,6 +13,8 @@
 #    under the License.
 #
 #
+import datetime
+
 from unittest import mock
 
 from cloudkitty.fetcher import gnocchi
@@ -44,6 +46,29 @@ class GnocchiFetcherTest(tests.TestCase):
 
         self.unique_scope_ids.sort()
 
+        ended = (datetime.date.today() -
+                 datetime.timedelta(days=10)).isoformat()
+
+        self.base_query = {
+            'or': [
+                {'=': {'ended_at': None}},
+                {'>=': {'ended_at': ended}}
+            ]
+        }
+
+        self.project_query = {
+            'not': {
+                'in': {
+                    'project_id': [
+                        'some_other_project_id',
+                        'some_other_project_id2',
+                        'some_other_project_id3',
+                        'some_replicated_id_project'
+                    ]
+                }
+            }
+        }
+
     def test_get_tenants_marker_list_resource_last_call(self):
         with mock.patch.object(
                 self.fetcher._conn.resource, 'search') as resource_list:
@@ -58,19 +83,14 @@ class GnocchiFetcherTest(tests.TestCase):
             self.assertEqual(self.unique_scope_ids, all_scope_ids)
 
             resource_list.assert_has_calls([
-                mock.call(resource_type='generic', details=True, query=None),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}}),
+                          query=self.base_query),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}})
+                          query={'and': [self.base_query,
+                                         self.project_query]}),
+                mock.call(resource_type='generic', details=True,
+                          query={'and': [self.base_query,
+                                         self.project_query]})
             ])
 
     def test_get_tenants_empty_list_resource_last_call(self):
@@ -85,20 +105,15 @@ class GnocchiFetcherTest(tests.TestCase):
             self.assertEqual(self.unique_scope_ids, all_scope_ids)
 
             resource_list.assert_has_calls([
-                mock.call(resource_type='generic', details=True, query=None),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}}),
+                          query=self.base_query),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}})],
-                any_order=False)
+                          query={'and': [self.base_query,
+                                         self.project_query]}),
+                mock.call(resource_type='generic', details=True,
+                          query={'and': [self.base_query,
+                                         self.project_query]})
+            ], any_order=False)
 
     def test_get_tenants_scope_id_as_none(self):
         with mock.patch.object(
@@ -113,23 +128,15 @@ class GnocchiFetcherTest(tests.TestCase):
             self.assertEqual(self.unique_scope_ids, all_scope_ids)
 
             resource_list.assert_has_calls([
-                mock.call(resource_type='generic', details=True, query=None),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}}),
+                          query=self.base_query),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}}),
+                          query={'and': [self.base_query,
+                                         self.project_query]}),
                 mock.call(resource_type='generic', details=True,
-                          query={'not': {'in': {'project_id': [
-                              'some_other_project_id',
-                              'some_other_project_id2',
-                              'some_other_project_id3',
-                              'some_replicated_id_project']}}})
+                          query={'and': [self.base_query,
+                                         self.project_query]}),
+                mock.call(resource_type='generic', details=True,
+                          query={'and': [self.base_query,
+                                         self.project_query]})
             ], any_order=False)
