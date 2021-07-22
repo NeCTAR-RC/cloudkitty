@@ -258,6 +258,8 @@ class Worker(BaseWorker):
     def _collect(self, metric, start_timestamp):
         next_timestamp = tzutils.add_delta(
             start_timestamp, timedelta(seconds=self._period))
+        LOG.info("[Nectar] Collecting project %s metric/%s from %s to %s",
+                 self._tenant_id, metric, start_timestamp, next_timestamp)
 
         name, data = self._collector.retrieve(
             metric,
@@ -393,6 +395,8 @@ class Orchestrator(cotyledon.Service):
                     '[Worker: {w}] Trying to acquire lock "{lck}" ...'.format(
                         w=self._worker_id, lck=lock_name)
                 )
+                LOG.info('[Nectar] Processing tenant {tenant}'.format(
+                    tenant=tenant_id))
                 if lock.acquire(blocking=False):
                     LOG.debug(
                         '[Worker: {w}] Acquired lock "{lck}" ...'.format(
