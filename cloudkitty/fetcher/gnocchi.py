@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import datetime
 import requests
 
 from gnocchiclient import auth as gauth
@@ -69,6 +70,11 @@ gfetcher_opts = [
         default=requests.adapters.DEFAULT_POOLSIZE,
         help='If the value is not defined, we use the value defined by '
              'requests.adapters.DEFAULT_POOLSIZE',
+    ),
+    cfg.IntOpt(
+        'since_days_ago',
+        default=10,
+        help='Only get the data since n days ago',
     )
 ]
 
@@ -126,7 +132,13 @@ class GnocchiFetcher(fetcher.BaseFetcher):
 
         scope_attribute = CONF.fetcher_gnocchi.scope_attribute
         resource_types = CONF.fetcher_gnocchi.resource_types
+        ended = datetime.date.today() - datetime.timedelta(
+            days=CONF.fetcher_gnocchi.since_days_ago)
+        ended = ended.isoformat()
+        base_query = {"or": [{"=": {"ended_at": None}},
+                             {">=": {"ended_at": ended}}]}
         for resource_type in resource_types:
+            count = 0
             while True:
                 search_scopes_query = None
                 if unique_scope_ids:
@@ -136,11 +148,22 @@ class GnocchiFetcher(fetcher.BaseFetcher):
                     search_scopes_query = {"not": {
                         "in": {scope_attribute: unique_scope_ids_list}}
                     }
-
+                    query = {
+                        "and": [
+                            base_query,
+                            search_scopes_query
+                        ]
+                    }
+                else:
+                    query = base_query
                 resources_chunk = self._conn.resource.search(
                     resource_type=resource_type, details=True,
-                    query=search_scopes_query
+                    query=query
                 )
+                count += 1
+                LOG.info("[Nectar] Getting resources with type %s: "
+                         "#%d call with %s resources",
+                         resource_type, count, len(resources_chunk))
                 chunk_len = len(resources_chunk)
 
                 if chunk_len < 1:
