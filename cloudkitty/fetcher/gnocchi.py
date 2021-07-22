@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import datetime
 import requests
 
 from gnocchiclient import auth as gauth
@@ -69,6 +70,11 @@ gfetcher_opts = [
         default=requests.adapters.DEFAULT_POOLSIZE,
         help='If the value is not defined, we use the value defined by '
              'requests.adapters.DEFAULT_POOLSIZE',
+    ),
+    cfg.IntOpt(
+        'since_days_ago',
+        default=10,
+        help='Only get the data since n days ago',
     )
 ]
 
@@ -123,13 +129,25 @@ class GnocchiFetcher(fetcher.BaseFetcher):
     def get_tenants(self):
         resources = []
         resource_types = CONF.fetcher_gnocchi.resource_types
+        ended = datetime.date.today() - datetime.timedelta(
+            days=CONF.fetcher_gnocchi.since_days_ago)
+        ended = ended.isoformat()
+        query = {"or": [{"=": {"ended_at": None}},
+                        {">=": {"ended_at": ended}}]}
         for resource_type in resource_types:
             marker = None
+            count = 0
             while True:
-                resources_chunk = self._conn.resource.list(
+                resources_chunk = self._conn.resource.search(
                     resource_type=resource_type,
                     marker=marker,
+                    query=query,
+                    sorts='project_id:asc',
                     details=True)
+                count += 1
+                LOG.info("[Nectar] Getting resources with type %s: "
+                         "#%d call with %s resources and marker is %s",
+                         resource_type, count, len(resources_chunk), marker)
                 if len(resources_chunk) < 1 or (
                         len(resources) == 1 and resources[0]['id'] == marker):
                     break
