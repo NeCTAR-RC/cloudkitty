@@ -431,6 +431,8 @@ class GnocchiCollector(collector.BaseCollector):
             LOG.debug("Processing entry [%s] for [%s] in timestamp ["
                       "start=%s, end=%s] and project id [%s]", d,
                       metric_name, start, end, project_id)
+            if not d['measures']['measures']:
+                continue
             if d['measures']['measures']['aggregated']:
                 try:
                     metadata, groupby, qty = self._format_data(
