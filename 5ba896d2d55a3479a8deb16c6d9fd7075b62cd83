@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e8fad6e_720a7ed5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2021-07-27T11:50:11Z",
+      "side": 1,
+      "message": "I wonder if this should instead be relative eg 1 year ago",
+      "revId": "5ba896d2d55a3479a8deb16c6d9fd7075b62cd83",
+      "serverId": "f182a8af-62ca-4ceb-ab81-14f8fec9c6c5"
+    }
+  ]
+}
