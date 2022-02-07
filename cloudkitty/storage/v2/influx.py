@@ -65,7 +65,7 @@ PERIOD_FIELD_NAME = '__ck_collect_period'
 
 
 def _sanitized_groupby(groupby):
-    forbidden = ('time',)
+    forbidden = ('time', 'time-1d',)
     return [g for g in groupby if g not in forbidden] if groupby else []
 
 
@@ -202,6 +202,9 @@ class InfluxClient(object):
             groupby_query = ''
             if 'time' in groupby:
                 groupby_query += 'time(' + str(self._default_period) + 's)'
+                groupby_query += ',' if groupby else ''
+            if 'time-1d' in groupby:
+                groupby_query += 'time(1d)'
                 groupby_query += ',' if groupby else ''
             if groupby:
                 groupby_query += '"' + '","'.join(
@@ -364,6 +367,10 @@ class InfluxStorage(v2_storage.BaseStorage):
         if groupby and 'time' in groupby:
             begin = tzutils.dt_from_iso(point['time'])
             period = point.get(PERIOD_FIELD_NAME) or self._default_period
+            end = tzutils.add_delta(begin, datetime.timedelta(seconds=period))
+        if groupby and 'time-1d' in groupby:
+            begin = tzutils.dt_from_iso(point['time'])
+            period = point.get(PERIOD_FIELD_NAME) or 86400
             end = tzutils.add_delta(begin, datetime.timedelta(seconds=period))
         output = {
             'begin': begin,
