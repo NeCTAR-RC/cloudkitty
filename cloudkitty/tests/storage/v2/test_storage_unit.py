@@ -389,7 +389,8 @@ class StorageUnitTest(TestCase):
             groupby)
 
     def test_parse_groupby_syntax_to_groupby_elements_all_time_options(self):
-        groupby = ["something", "time", "time-d", "time-w", "time-m", "time-y"]
+        groupby = ["something", "time", "time-d", "time-w", "time-m",
+                   "time-y", "time-1d"]
 
         expected_log_calls = []
         for k, v in storage.v2.BaseStorage.TIME_COMMANDS_MAP.items():
@@ -403,7 +404,7 @@ class StorageUnitTest(TestCase):
             log_debug_mock.assert_has_calls(expected_log_calls)
 
         self.assertEqual(["something", "time", "day_of_the_year",
-                          "week_of_the_year", "month", "year"], out)
+                          "week_of_the_year", "month", "year", "time-1d"], out)
 
     def test_parse_groupby_syntax_to_groupby_elements_no_groupby(self):
         with mock.patch.object(storage.v2.LOG, 'debug') as log_debug_mock:
