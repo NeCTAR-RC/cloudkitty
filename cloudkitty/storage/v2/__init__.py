@@ -167,7 +167,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return storage_state.StateManager().get_tenants(begin, end)
 
     TIME_COMMANDS_MAP = {"d": "day_of_the_year", "w": "week_of_the_year",
-                         "m": "month", "y": "year"}
+                         "m": "month", "y": "year", "1d": "time-1d"}
 
     def parse_groupby_syntax_to_groupby_elements(self, groupbys):
         if not groupbys:
